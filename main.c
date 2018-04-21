@@ -1,20 +1,9 @@
 /*
  *
  * hardware
- * @TODO conectar sensor a puerto analogico
- *
- *
- * software
- * @TODO mostrar numeros en display
- *
- * @TODO configurar switch
- * @TODO leer switch
- *
- * @TODO configurar timer
- * @TODO medir tiempo
- *
- * @TODO configurar puerto analogico
- * @TODO leer puerto analogico
+ * @TODO pasar a milesimas
+ * @TODO
+ * @TODO selector de modo pendular vs circular
  *
  */
 
@@ -26,7 +15,7 @@
 #include "myLcd.h"
 
 #define DEBOUNCE_HITS       5
-#define TIMER_VALUE       400
+#define TIMER_VALUE        32
 #define SIGNAL          0x200
 
 typedef enum {
@@ -67,7 +56,7 @@ void Timer_setup() {
     TA0CCTL0 = CCIE;                          // Enable interrupt for Timer_0
 }
 
-int tickCount = 0;
+unsigned int tickCount = 0;
 /**
  * main.c
  */
@@ -149,7 +138,7 @@ __interrupt void ADC12_ISR(void){
         case FALLING_EDGE_DETECTED:
             TA0CCR0 = 0;                   // stop timer
             myLCD_displayNumber(tickCount);
-            myLCD_showSymbol(LCD_UPDATE,LCD_A4DP,0);
+            myLCD_showSymbol(LCD_UPDATE,LCD_A3DP,0);
             tickCount = 0;
             TA0CCR0 = TIMER_VALUE;         // restart timer
             P1OUT = BIT0;
