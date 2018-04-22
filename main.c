@@ -173,7 +173,7 @@ __interrupt void ADC12_ISR(void){
 
         /****************************************************************/
         case RISING_EDGE_DETECTED:
-            P9OUT = GREEN_OFF;
+            P9OUT &= GREEN_OFF;
             ticksDown = tickCount;
             tickCount = 0;
             myLCD_displayNumber(ticksDown + ticksUp);
@@ -184,12 +184,13 @@ __interrupt void ADC12_ISR(void){
             }
 
             state = WAIING_FALLING_EDGE;
-        /****************************************************************/
         break;
-        default:
 
+        /****************************************************************/
+        default:
+        break;
 
     }
 
-    ADC12CTL0 = ADC12CTL0 | ADC12SC;          // start new conversion
+    ADC12CTL0 = ADC12CTL0 | ADC12SC;          // start next conversion
 }
