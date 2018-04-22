@@ -10,13 +10,20 @@
 #include <msp430.h>
 #include <driverlib.h>
 
-#include "myGpio.h"
 #include "myClocks.h"
 #include "myLcd.h"
 
-#define DEBOUNCE_HITS       5
-#define TIMER_VALUE        32
-#define SIGNAL          0x200
+#define DEBOUNCE_HITS           5       // debounce count
+#define TIMER_VALUE            32       //
+#define SIGNAL              0x200       // signal threshold
+
+#define RED_ON              0x0001      // Enable and turn on the red LED
+#define RED_OFF             0xFFFE      // Turn off the red LED
+#define GREEN_ON            0x0080      // Enable and turn on the green LED
+#define GREEN_OFF           0xFF7F      // Turn off the green LED
+#define ENABLE_PINS         0xFFFE      // Required to use inputs and outputs
+#define BUTTON1             0x0002      // p1.1 is button 1
+#define BUTTON2             0x0004      // p1.2 is button 2
 
 typedef enum {
     WAIING_FALLING_EDGE,
@@ -27,13 +34,6 @@ typedef enum {
     RISING_EDGE_DETECTED
 } FSMtimer_t;
 
-
-
-#define ENABLE_PINS     0xFFFE
-
-
-
-
 void ADC_setup() {
     #define ADC12_SHT_16       0x0200         // 16 clock cycles for sample and hold
     #define ADC12_ON           0x0010         // ADC12
@@ -41,10 +41,12 @@ void ADC_setup() {
     #define ADC12_12BIT        0x0020
     #define ADC12_P92          0x000A
 
-    ADC12CTL0  = ADC12_ON | ADC12_SHT_16  ;   // turn on and set sample and hold time
-    ADC12CTL1  = ADC12_SHT_SRC_SEL ;          // specify sample and hold clock source
-    ADC12CTL2  = ADC12_12BIT ;                // 12 bit conversion result
-    ADC12MCTL0 = ADC12_P92 ;                  // use p9.2 as analog input
+    ADC12CTL0  = ADC12_ON | ADC12_SHT_16;     // turn on and set sample and hold time
+    ADC12CTL1  = ADC12_SHT_SRC_SEL;           // specify sample and hold clock source
+    ADC12CTL2  = ADC12_12BIT;                 // 12 bit conversion result
+    ADC12MCTL0 = ADC12_P92;                   // use p9.2 as analog input
+    ADC12IER0  = ADC12IE0;                    // hook ISR to ADC conversion complete
+    ADC12CTL0  = ADC12CTL0 | ADC12ENC;        // enable conversion
 }
 
 void Timer_setup() {
@@ -56,6 +58,24 @@ void Timer_setup() {
     TA0CCTL0 = CCIE;                          // Enable interrupt for Timer_0
 }
 
+void DigitalIO_setup(){
+    P1DIR |= RED_ON;                    // set red led as output
+    P1OUT &= RED_OFF;                   // turn off red led
+
+    P9DIR |= GREEN_ON;                  // set green led as output
+    P9OUT &= GREEN_OFF;                 // turn off green led
+
+    P1OUT = P1OUT|BUTTON1;              // set p1.1 as input
+    P1REN = P1REN|BUTTON1;              // enable pull-up resistor
+
+    P1OUT = P1OUT|BUTTON2;              // set p1.2 as input
+    P1REN = P1REN|BUTTON2;              // enable pull-up resistor
+
+    PM5CTL0 = ENABLE_PINS;              // enable inputs and outputs
+
+
+}
+
 unsigned int tickCount = 0;
 /**
  * main.c
@@ -65,23 +85,20 @@ int main(void)
 
     WDTCTL = WDTPW | WDTHOLD;                  // stop watchdog timer
 
-    initGPIO();
+    // Set LFXT (low freq crystal pins) to crystal input (rather than GPIO)
+    GPIO_setAsPeripheralModuleFunctionInputPin(
+            GPIO_PORT_PJ,
+            GPIO_PIN4 +                 // LFXIN  on PJ.4
+            GPIO_PIN5 ,                 // LFXOUT on PJ.5
+            GPIO_PRIMARY_MODULE_FUNCTION
+    );
+
     initClocks();
     myLCD_init();
 
-    PM5CTL0 = ENABLE_PINS;                     // enable inputs and outputs
-
-    P1DIR = BIT0;                              // set red led as output
-    P9DIR = BIT7;                              // set green led as output
-
-    P1OUT = 0x00;                              // turn off red led
-    P9OUT = 0x00;                              // turn off green led
-
     ADC_setup();
-
     Timer_setup();
-
-    ADC12IER0 = ADC12IE0;                      // hook ISR to ADC conversion complete
+    DigitalIO_setup();
 
     myLCD_showChar('T',1);
     myLCD_showChar('I',2);
@@ -89,10 +106,9 @@ int main(void)
     myLCD_showChar('E',4);
     myLCD_showChar('R',5);
 
-
     _BIS_SR(GIE);                              // enable interrupts
 
-    ADC12CTL0 = ADC12CTL0 | ADC12ENC;          // enable conversion
+
     ADC12CTL0 = ADC12CTL0 | ADC12SC;           // start first conversion
 
     while (1) {
@@ -104,6 +120,8 @@ int main(void)
 __interrupt void Timer0_CCR0_MATCH(void){
     ++tickCount;
 }
+
+
 
 #pragma vector=ADC12_VECTOR
 __interrupt void ADC12_ISR(void){
