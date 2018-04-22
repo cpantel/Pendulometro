@@ -1,9 +1,5 @@
 /*
  *
- * hardware
- * @TODO pasar a milesimas
- * @TODO
- * @TODO selector de modo pendular vs circular
  *
  */
 
@@ -15,7 +11,7 @@
 
 #define DEBOUNCE_HITS           5       // debounce count
 #define TIMER_VALUE            32       //
-#define SIGNAL              0x200       // signal threshold
+#define SIGNAL_LEVEL        0x200       // signal threshold
 
 #define RED_ON              0x0001      // Enable and turn on the red LED
 #define RED_OFF             0xFFFE      // Turn off the red LED
@@ -72,19 +68,12 @@ void DigitalIO_setup(){
     P1REN = P1REN|BUTTON2;              // enable pull-up resistor
 
     PM5CTL0 = ENABLE_PINS;              // enable inputs and outputs
-
-    P1IE  = BIT1;                       // hook interrupt to push button1?
-    P1IES = BIT1;                       // hook interrupt to push button1?
-    P1IFG = 0x00;                       // enable interrupt?
 }
 
 unsigned int tickCount = 0;
-/**
- * main.c
- */
+
 int main(void)
 {
-
     WDTCTL = WDTPW | WDTHOLD;                  // stop watchdog timer
 
     // Set LFXT (low freq crystal pins) to crystal input (rather than GPIO)
@@ -108,55 +97,41 @@ int main(void)
     myLCD_showChar('E',4);
     myLCD_showChar('R',5);
 
-    _BIS_SR(GIE);                              // enable interrupts
-
     ADC12CTL0 = ADC12CTL0 | ADC12SC;           // start first conversion
 
-    while (1) {
-
-    }
+    _BIS_SR(LPM0_bits | GIE);                  // enable interrupts and low power mode
 }
 
 #pragma vector=TIMER0_A0_VECTOR
 __interrupt void Timer0_CCR0_MATCH(void){
     ++tickCount;
-
-}
-
-#pragma vector=PORT1_VECTOR
-__interrupt void Port1_ISR(void) {
-    switch (P1IV) {
-        case 6:
-            P1OUT = P1OUT ^ BIT0;
-        break;
-        case 4:
-            P9OUT = P9OUT ^ BIT7;
-        break;
-    }
-    P1IFG &= ~(BIT1);
 }
 
 #pragma vector=ADC12_VECTOR
 __interrupt void ADC12_ISR(void){
 
-    static int low = 0;
-    static int high = 0;
+    static unsigned int low = 0;
+    static unsigned int high = 0;
+
+    static unsigned int ticksUp = 0;
+    static unsigned int ticksDown = 0;
 
     static FSMtimer_t state = WAIING_FALLING_EDGE;
 
-    int justRead = ADC12MEM0 < SIGNAL;
+    unsigned int belowThreshold = ADC12MEM0 < SIGNAL_LEVEL;
 
     switch(state) {
         case WAIING_FALLING_EDGE:
-            if (justRead) {
+            if (belowThreshold) {
                 state = DEBOUNCING_FALLING_EDGE;
                 low = 1;
                 high = 0;
             }
         break;
 
+        /****************************************************************/
         case DEBOUNCING_FALLING_EDGE:
-            if (justRead) {
+            if (belowThreshold) {
                 ++low;
                 if ( low >= DEBOUNCE_HITS) {
                     state = FALLING_EDGE_DETECTED;
@@ -166,26 +141,26 @@ __interrupt void ADC12_ISR(void){
             }
         break;
 
+        /****************************************************************/
         case FALLING_EDGE_DETECTED:
-            TA0CCR0 = 0;                   // stop timer
-            myLCD_displayNumber(tickCount);
-            myLCD_showSymbol(LCD_UPDATE,LCD_A3DP,0);
+            ticksUp = tickCount;
             tickCount = 0;
-            TA0CCR0 = TIMER_VALUE;         // restart timer
-            P1OUT = BIT0;
+            P9OUT = GREEN_ON;
             state = WAITING_RISING_EDGE;
-
         break;
 
+        /****************************************************************/
         case WAITING_RISING_EDGE:
-            if (! justRead) {
+            if (! belowThreshold) {
                 state = DEBOUNCING_RISING_EDGE;
                 low = 0;
                 high = 1;
             }
         break;
+
+        /****************************************************************/
         case DEBOUNCING_RISING_EDGE:
-            if (!justRead) {
+            if (!belowThreshold) {
                 ++high;
                 if ( high >= DEBOUNCE_HITS) {
                     state = RISING_EDGE_DETECTED;
@@ -195,9 +170,22 @@ __interrupt void ADC12_ISR(void){
             }
 
         break;
+
+        /****************************************************************/
         case RISING_EDGE_DETECTED:
-            P1OUT = 0x00;
+            P9OUT = GREEN_OFF;
+            ticksDown = tickCount;
+            tickCount = 0;
+            myLCD_displayNumber(ticksDown + ticksUp);
+            myLCD_showSymbol(LCD_UPDATE,LCD_A3DP,0);
+
+            if (tickCount != 0) {
+              P1OUT = RED_ON;
+            }
+
             state = WAIING_FALLING_EDGE;
+        /****************************************************************/
+        break;
         default:
 
 
