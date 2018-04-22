@@ -73,7 +73,9 @@ void DigitalIO_setup(){
 
     PM5CTL0 = ENABLE_PINS;              // enable inputs and outputs
 
-
+    P1IE  = BIT1;                       // hook interrupt to push button1?
+    P1IES = BIT1;                       // hook interrupt to push button1?
+    P1IFG = 0x00;                       // enable interrupt?
 }
 
 unsigned int tickCount = 0;
@@ -108,7 +110,6 @@ int main(void)
 
     _BIS_SR(GIE);                              // enable interrupts
 
-
     ADC12CTL0 = ADC12CTL0 | ADC12SC;           // start first conversion
 
     while (1) {
@@ -119,9 +120,21 @@ int main(void)
 #pragma vector=TIMER0_A0_VECTOR
 __interrupt void Timer0_CCR0_MATCH(void){
     ++tickCount;
+
 }
 
-
+#pragma vector=PORT1_VECTOR
+__interrupt void Port1_ISR(void) {
+    switch (P1IV) {
+        case 6:
+            P1OUT = P1OUT ^ BIT0;
+        break;
+        case 4:
+            P9OUT = P9OUT ^ BIT7;
+        break;
+    }
+    P1IFG &= ~(BIT1);
+}
 
 #pragma vector=ADC12_VECTOR
 __interrupt void ADC12_ISR(void){
@@ -189,5 +202,6 @@ __interrupt void ADC12_ISR(void){
 
 
     }
+
     ADC12CTL0 = ADC12CTL0 | ADC12SC;          // start new conversion
 }
