@@ -1,3 +1,6 @@
+.*.swp
+edu-ciaa-nxp/freeOSEK/gen/*
+
 # Prerequisites
 *.d
 

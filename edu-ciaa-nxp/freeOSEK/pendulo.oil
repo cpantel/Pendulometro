@@ -1,0 +1,56 @@
+OSEK OSEK {
+
+   OS	Pendulo {
+      STATUS = EXTENDED;
+      ERRORHOOK = TRUE;
+      PRETASKHOOK = FALSE;
+      POSTTASKHOOK = FALSE;
+      STARTUPHOOK = FALSE;
+      SHUTDOWNHOOK = FALSE;
+      USERESSCHEDULER = FALSE;
+      MEMMAP = FALSE;
+   };
+
+   APPMODE = AppMode1;
+
+   RESOURCE=AnalogValue;
+
+   TASK adcStartAsyncWrapperTask {
+      PRIORITY = 2;
+      ACTIVATION = 1;
+      STACK = 512;
+      TYPE = EXTENDED;
+      SCHEDULE = NON;
+      AUTOSTART = TRUE {
+      	APPMODE = AppMode1;
+      }
+   }
+
+   ISR adcReadAsyncWrapperISR {
+      INTERRUPT = ADC0;
+      PRIORITY = 0;
+      CATEGORY = 2;
+      RESOURCE = AnalogValue;
+   }
+   
+   ALARM ActivateAdcStartAsyncWrapperTask{
+      COUNTER = HardwareCounter;
+      ACTION = ACTIVATETASK {
+         TASK = adcStartAsyncWrapperTask;
+      }
+      AUTOSTART = TRUE {
+      	APPMODE = AppMode1;
+      	ALARMTIME = 999;
+      	CYCLETIME = 900;
+      }
+   }
+
+   COUNTER HardwareCounter {
+      MAXALLOWEDVALUE = 1000;
+      TICKSPERBASE = 1;
+      MINCYCLE = 1;
+      TYPE = HARDWARE;
+      COUNTER = HWCOUNTER0;
+   };
+
+};
