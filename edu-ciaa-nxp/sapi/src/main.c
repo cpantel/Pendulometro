@@ -2,7 +2,7 @@
 
 #define DEBOUNCE_HITS           5       // debounce count
 #define TIMER_VALUE            60       //
-#define SIGNAL_LEVEL        0x20       // signal threshol
+#define SIGNAL_LEVEL         0x20       // signal threshold
 
 char* itoa(int value, char* result, int base);
 
@@ -16,6 +16,7 @@ typedef enum {
 } FSMtimer_t;
 
 int main(void){
+
    boardConfig();
    adcConfig( ADC_ENABLE );
 
@@ -28,10 +29,10 @@ int main(void){
 
    FSMtimer_t state = WAIING_FALLING_EDGE;
 
-   uint16_t muestra = 0;
-   uint32_t ledState1 = 0;
+
+ //  uint32_t ledState1 = 0;
    /* Contador */
-   uint32_t i = 0;
+ //  uint32_t i = 0;
 
    static unsigned int low = 0;
    static unsigned int high = 0;
@@ -41,16 +42,16 @@ int main(void){
 
 
    /* Variables de delays no bloqueantes */
-   delay_t delay1;
-   delay_t delay2;
+ //  delay_t delay1;
+ //  delay_t delay2;
 
    /* Inicializar Retardo no bloqueante con tiempo en ms */
-   delayConfig( &delay1, 500 );
-   delayConfig( &delay2, 200 );
+ //  delayConfig( &delay1, 500 );
+ //  delayConfig( &delay2, 200 );
 
    /* ------------- REPETIR POR SIEMPRE ------------- */
    while(1) {
-      muestra = adcRead( CH1 );
+     uint16_t muestra = adcRead( CH1 );
      unsigned int belowThreshold = muestra  < SIGNAL_LEVEL;
 
 
@@ -86,8 +87,8 @@ int main(void){
 
         /****************************************************************/
         case FALLING_EDGE_DETECTED:
-//            ticksUp = tickCount;
-//            tickCount = 0;
+            ticksUp = tickRead();
+
             gpioWrite( LED1, 1 );
             gpioWrite( LED2, 1 );
             gpioWrite( LED3, 0 );
@@ -133,8 +134,7 @@ int main(void){
             gpioWrite( LED2, 1 );
             gpioWrite( LED3, 1 );
 
-//            ticksDown = tickCount;
-//            tickCount = 0;
+            ticksDown = tickRead();
             lcdClear();
             itoa(ticksDown + ticksUp, lcdBuffer, 10);
             lcdGoToXY( 1, 1 );
@@ -158,24 +158,24 @@ int main(void){
 
 
       /* delayRead retorna TRUE cuando se cumple el tiempo de retardo */
-      if ( delayRead( &delay1 ) ){
+    //  if ( delayRead( &delay1 ) ){
 
          /* Leo la Entrada Analogica AI0 - ADC0 CH1 */
          muestra = adcRead( CH1 );
 
-      }
-
-      /* delayRead retorna TRUE cuando se cumple el tiempo de retardo */
+    //  }
+/*
+      // delayRead retorna TRUE cuando se cumple el tiempo de retardo
       if ( delayRead( &delay2 ) ){
          ledState1  = !ledState1;
          gpioWrite( LEDR, ledState1 );
 
-         /* Si pasaron 20 delays le aumento el tiempo */
+         // Si pasaron 20 delays le aumento el tiempo 
          i++;
          if( i == 20 )
             delayWrite( &delay2, 1000 );
       }
-
+*/
    }
 
    /* NO DEBE LLEGAR NUNCA AQUI, debido a que a este programa no es llamado
