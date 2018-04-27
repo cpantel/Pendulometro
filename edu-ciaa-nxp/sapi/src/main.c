@@ -2,7 +2,7 @@
 
 #define DEBOUNCE_HITS           5       // debounce count
 #define TIMER_VALUE            60       //
-#define SIGNAL_LEVEL        0x200       // signal threshol
+#define SIGNAL_LEVEL        0x20       // signal threshol
 
 char* itoa(int value, char* result, int base);
 
@@ -22,7 +22,7 @@ int main(void){
    lcdInit( 16, 2, 5, 8 );
    lcdClear(); 
    lcdGoToXY( 1, 1 );
-   lcdSendStringRaw( "Timer2" );
+   lcdSendStringRaw( "Timer3" );
 
    char lcdBuffer[] = "0000000000";
 
