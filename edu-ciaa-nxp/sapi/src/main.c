@@ -1,7 +1,6 @@
 #include "sapi.h"
 
 #define DEBOUNCE_HITS           5       // debounce count
-#define TIMER_VALUE            60       //
 #define SIGNAL_LEVEL         0x20       // signal threshold
 
 char* itoa(int value, char* result, int base);
@@ -16,46 +15,33 @@ typedef enum {
 } FSMtimer_t;
 
 int main(void){
+   uint8_t low = 0;
+   uint8_t high = 0;
+    
+   tick_t ticksUp = 0;
+   tick_t ticksDown = 0;
 
-   boardConfig();
-   adcConfig( ADC_ENABLE );
-
-   lcdInit( 16, 2, 5, 8 );
-   lcdClear(); 
-   lcdGoToXY( 1, 1 );
-   lcdSendStringRaw( "Timer3" );
-
-   char lcdBuffer[] = "0000000000";
+   tick_t tickMarkUp = 0;
+   tick_t tickMarkDown = 0;
 
    FSMtimer_t state = WAIING_FALLING_EDGE;
 
+   boardConfig();
+   adcConfig( ADC_ENABLE );
+   lcdInit( 16, 2, 5, 8 );
 
- //  uint32_t ledState1 = 0;
-   /* Contador */
- //  uint32_t i = 0;
+   lcdClear(); 
+   lcdGoToXY( 1, 1 );
+   lcdSendStringRaw( "Timer" );
 
-   static unsigned int low = 0;
-   static unsigned int high = 0;
+   char lcdBuffer[] = "0000000000";
 
-   static unsigned int ticksUp = 0;
-   static unsigned int ticksDown = 0;
-
-
-   /* Variables de delays no bloqueantes */
- //  delay_t delay1;
- //  delay_t delay2;
-
-   /* Inicializar Retardo no bloqueante con tiempo en ms */
- //  delayConfig( &delay1, 500 );
- //  delayConfig( &delay2, 200 );
-
-   /* ------------- REPETIR POR SIEMPRE ------------- */
    while(1) {
      uint16_t muestra = adcRead( CH1 );
      unsigned int belowThreshold = muestra  < SIGNAL_LEVEL;
 
 
-    switch(state) {
+     switch(state) {
         case WAIING_FALLING_EDGE:
             gpioWrite( LED1, 1 );
             gpioWrite( LED2, 0 );
@@ -87,14 +73,15 @@ int main(void){
 
         /****************************************************************/
         case FALLING_EDGE_DETECTED:
-            ticksUp = tickRead();
-
             gpioWrite( LED1, 1 );
             gpioWrite( LED2, 1 );
             gpioWrite( LED3, 0 );
 
+            tickMarkDown = tickRead();
+            ticksUp = tickMarkDown - tickMarkUp;
 
             state = WAITING_RISING_EDGE;
+
         break;
 
         /****************************************************************/
@@ -108,6 +95,7 @@ int main(void){
                 low = 0;
                 high = 1;
             }
+
         break;
 
         /****************************************************************/
@@ -129,57 +117,33 @@ int main(void){
 
         /****************************************************************/
         case RISING_EDGE_DETECTED:
-
             gpioWrite( LED1, 0 );
             gpioWrite( LED2, 1 );
             gpioWrite( LED3, 1 );
 
-            ticksDown = tickRead();
+            tickMarkUp = tickRead();
+            ticksDown = tickMarkUp - tickMarkDown;
+
             lcdClear();
             itoa(ticksDown + ticksUp, lcdBuffer, 10);
             lcdGoToXY( 1, 1 );
 
             lcdSendStringRaw( lcdBuffer );
-            
 
-
-//            if (tickCount != 0) {
-               gpioWrite( LED1, 1 );
-  //          }
+            gpioWrite( LED1, 1 );
 
             state = WAIING_FALLING_EDGE;
+
         break;
 
         /****************************************************************/
         default:
         break;
 
-    }
+     }
 
-
-      /* delayRead retorna TRUE cuando se cumple el tiempo de retardo */
-    //  if ( delayRead( &delay1 ) ){
-
-         /* Leo la Entrada Analogica AI0 - ADC0 CH1 */
-         muestra = adcRead( CH1 );
-
-    //  }
-/*
-      // delayRead retorna TRUE cuando se cumple el tiempo de retardo
-      if ( delayRead( &delay2 ) ){
-         ledState1  = !ledState1;
-         gpioWrite( LEDR, ledState1 );
-
-         // Si pasaron 20 delays le aumento el tiempo 
-         i++;
-         if( i == 20 )
-            delayWrite( &delay2, 1000 );
-      }
-*/
    }
 
-   /* NO DEBE LLEGAR NUNCA AQUI, debido a que a este programa no es llamado
-      por ningun S.O. */
    return 0 ;
 }
 
