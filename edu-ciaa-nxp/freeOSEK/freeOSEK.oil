@@ -13,7 +13,7 @@ OSEK OSEK {
 
    APPMODE = AppMode1;
 
-   RESOURCE=AnalogValue;
+   RESOURCE=TickCount;
 
    TASK adcStartAsyncWrapperTask {
       PRIORITY = 2;
@@ -26,11 +26,24 @@ OSEK OSEK {
       }
    }
 
+   TASK tickIncrementTask {
+      PRIORITY = 1;
+      ACTIVATION = 1;
+      STACK = 512;
+      TYPE = EXTENDED;
+      SCHEDULE = NON;
+      RESOURCE = TickCount;
+      AUTOSTART = TRUE {
+        APPMODE = AppMode1;
+      
+      }
+   }
+
    ISR adcReadAsyncWrapperISR {
       INTERRUPT = ADC0;
       PRIORITY = 0;
       CATEGORY = 2;
-      RESOURCE = AnalogValue;
+      RESOURCE = TickCount;
    }
    
    ALARM ActivateAdcStartAsyncWrapperTask{
@@ -41,7 +54,20 @@ OSEK OSEK {
       AUTOSTART = TRUE {
       	APPMODE = AppMode1;
       	ALARMTIME = 999;
-      	CYCLETIME = 900;
+      	CYCLETIME = 10;
+      }
+   }
+
+
+   ALARM ActivateTickIncrementerTask{
+      COUNTER = HardwareCounter;
+      ACTION = ACTIVATETASK {
+         TASK = tickIncrementTask;
+      }
+      AUTOSTART = TRUE {
+        APPMODE = AppMode1;
+        ALARMTIME = 999;
+        CYCLETIME = 1;
       }
    }
 
