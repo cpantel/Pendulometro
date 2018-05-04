@@ -1,0 +1,90 @@
+OSEK OSEK {
+
+   OS Timer {
+      STATUS = EXTENDED;
+      ERRORHOOK = TRUE;
+      PRETASKHOOK = FALSE;
+      POSTTASKHOOK = FALSE;
+      STARTUPHOOK = FALSE;
+      SHUTDOWNHOOK = FALSE;
+      USERESSCHEDULER = FALSE;
+      MEMMAP = FALSE;
+   };
+
+   APPMODE = AppMode1;
+
+   RESOURCE = TickCount;
+
+   EVENT = ADCRead;
+
+   TASK adcStartAsyncWrapperTask {
+      PRIORITY = 2;
+      ACTIVATION = 1;
+      STACK = 512;
+      TYPE = EXTENDED;
+      SCHEDULE = FULL;
+   }
+
+   TASK tickIncrementTask {
+      PRIORITY = 1;
+      ACTIVATION = 1;
+      STACK = 512;
+      TYPE = EXTENDED;
+      RESOURCE = TickCount;
+      SCHEDULE = FULL;
+   }
+
+   TASK FSMTask {
+      PRIORITY = 1;
+      ACTIVATION = 1;
+      STACK = 512;
+      TYPE = EXTENDED;
+      SCHEDULE = FULL;
+      RESOURCE = TickCount;
+      EVENT = ADCRead;
+      AUTOSTART = TRUE {
+        APPMODE = AppMode1;
+      }
+   }
+
+   ISR adcReadAsyncWrapperISR {
+      INTERRUPT = ADC0;
+      PRIORITY = 0;
+      CATEGORY = 2;
+      EVENT = ADCRead;
+   }
+   
+   ALARM ActivateAdcStartAsyncWrapperTask{
+      COUNTER = HardwareCounter;
+      ACTION = ACTIVATETASK {
+         TASK = adcStartAsyncWrapperTask;
+      }
+      AUTOSTART = TRUE {
+      	APPMODE = AppMode1;
+      	ALARMTIME = 1000;
+      	CYCLETIME = 5;
+      }
+   }
+
+
+   ALARM ActivateTickIncrementerTask{
+      COUNTER = HardwareCounter;
+      ACTION = ACTIVATETASK {
+         TASK = tickIncrementTask;
+      }
+      AUTOSTART = TRUE {
+        APPMODE = AppMode1;
+        ALARMTIME = 500;
+        CYCLETIME = 1;
+      }
+   }
+
+   COUNTER HardwareCounter {
+      MAXALLOWEDVALUE = 10000;
+      TICKSPERBASE = 1;
+      MINCYCLE = 1;
+      TYPE = HARDWARE;
+      COUNTER = HWCOUNTER0;
+   };
+
+};
