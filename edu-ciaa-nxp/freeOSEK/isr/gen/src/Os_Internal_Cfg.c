@@ -186,12 +186,16 @@ const TaskCoreType RemoteTasksCore[REMOTE_TASKS_COUNT] = {};
 /** \brief TaskVar Array */
 TaskVariableType TasksVar[TASKS_COUNT];
 
+/** \brief List of Auto Start Tasks in Application Mode AppMode1 */
+const TaskType TasksAppModeAppMode1[1]  = {
+   FSMTask
+};
 /** \brief AutoStart Array */
 const AutoStartType AutoStart[1]  = {
    /* Application Mode AppMode1 */
    {
-      0, /* Total Auto Start Tasks in this Application Mode */
-      NULL /* no tasks on this mode */
+      1, /* Total Auto Start Tasks in this Application Mode */
+      (TaskRefType)TasksAppModeAppMode1 /* Pointer to the list of Auto Start Stacks on this Application Mode */
    }
 };
 

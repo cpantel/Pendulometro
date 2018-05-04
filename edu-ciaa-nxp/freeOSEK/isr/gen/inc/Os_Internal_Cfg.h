@@ -342,6 +342,8 @@ extern TaskVariableType TasksVar[TASKS_COUNT];
  **/
 extern uint8 ApplicationMode;
 
+/** \brief List of Auto Start Tasks in Application Mode AppMode1 */
+extern const TaskType TasksAppModeAppMode1[1];
 /** \brief AutoStart Array */
 extern const AutoStartType AutoStart[1];
 

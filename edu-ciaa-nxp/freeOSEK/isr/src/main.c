@@ -56,12 +56,12 @@ void ErrorHook(void)
 
 TASK(tickIncrementTask)
 {
-//   GetResource(TickCount);
+   GetResource(TickCount);
    ++tickCount;
    if (tickCount % 100 == 0 ) gpioToggle( LED1);
 
 //   uartWriteString( UART_USB, ".");
-//   ReleaseResource(TickCount);
+   ReleaseResource(TickCount);
 
    TerminateTask();
 }
