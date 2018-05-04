@@ -6,8 +6,8 @@
 
 /*==================[inclusiones]============================================*/
 
-#include "sapi.h"       // <= sAPI header
-#include "os.h"         // <= freeOSEK
+#include "sapi.h"
+#include "os.h"
 
 #define DEBOUNCE_HITS           5       // debounce count
 #define SIGNAL_LEVEL         0x20       // signal threshold
@@ -15,17 +15,20 @@
 char* itoa(int value, char* result, int base);
 
 typedef enum {
-    WAIING_FALLING_EDGE,
-    DEBOUNCING_FALLING_EDGE,
-    FALLING_EDGE_DETECTED,
-    WAITING_RISING_EDGE,
-    DEBOUNCING_RISING_EDGE,
-    RISING_EDGE_DETECTED
+   WAITING_FALLING_EDGE,
+   DEBOUNCING_FALLING_EDGE,
+   FALLING_EDGE_DETECTED,
+   WAITING_RISING_EDGE,
+   DEBOUNCING_RISING_EDGE,
+   RISING_EDGE_DETECTED
 } FSMtimer_t;
 
 uint16_t muestra = 0;
 
 uint64_t tickCount = 0; // overflow check missing
+
+uint64_t fsmloopcounter = 0;                           // DEBUG
+
 
 int main( void )
 {
@@ -35,7 +38,7 @@ int main( void )
 
    uartConfig( UART_USB, 115200 );
 
-   uartWriteString( UART_USB, "\nTimer\n");
+   uartWriteString( UART_USB, "\nTimer NO ISR v1\n");
 
    StartOS(AppMode1);
 
@@ -45,25 +48,20 @@ int main( void )
 
 void ErrorHook(void)
 {
-	ShutdownOS(0);
+   uartWriteString( UART_USB, "Shutdown os\n");
+   ShutdownOS(0);
 }
 
-TASK(adcStartAsyncWrapperTask)
-{
-   gpioToggle( LEDB );
-
-   adcStartAsync(CH1);
-
-   TerminateTask();
-}
 
 TASK(tickIncrementTask)
 {
+   GetResource(TickCount);
    ++tickCount;
+   ReleaseResource(TickCount);
    TerminateTask();
 }
 
-ISR (adcReadAsyncWrapperISR)
+TASK (FSMTask)
 {
    static uint8_t low = 0;
    static uint8_t high = 0;
@@ -74,116 +72,110 @@ ISR (adcReadAsyncWrapperISR)
    static tick_t tickMarkUp = 0;
    static tick_t tickMarkDown = 0;
 
-   static    FSMtimer_t state = WAIING_FALLING_EDGE;
+   static FSMtimer_t state = WAITING_FALLING_EDGE;
 
 
-//   GetResource(TickCount);
+   while (1) {
+      uint16_t muestra = adcRead( CH1 );
+      unsigned int belowThreshold = muestra  < SIGNAL_LEVEL;
 
-   gpioToggle( LED3 );
-     uint16_t muestra = adcReadAsync( CH1 , !ADC_CLEAR_INT );
-     unsigned int belowThreshold = muestra  < SIGNAL_LEVEL;
-
-     switch(state) {
-        case WAIING_FALLING_EDGE:
+      switch(state) {
+         case WAITING_FALLING_EDGE:
             gpioWrite( LED1, 1 );
             gpioWrite( LED2, 0 );
             gpioWrite( LED3, 0 );
 
             if (belowThreshold) {
-                state = DEBOUNCING_FALLING_EDGE;
-                low = 1;
-                high = 0;
+               state = DEBOUNCING_FALLING_EDGE;
+               low = 1;
+               high = 0;
             }
 
-        break;
-        /****************************************************************/
-        case DEBOUNCING_FALLING_EDGE:
+         break;
+
+         case DEBOUNCING_FALLING_EDGE:
             gpioWrite( LED1, 0 );
             gpioWrite( LED2, 1 );
             gpioWrite( LED3, 0 );
 
             if (belowThreshold) {
-                ++low;
-                if ( low >= DEBOUNCE_HITS) {
-                    state = FALLING_EDGE_DETECTED;
-                }
+               ++low;
+               if ( low >= DEBOUNCE_HITS) {
+                  state = FALLING_EDGE_DETECTED;
+               }
             } else {
-                low = 0;
+               low = 0;
             }
-        break;
+         break;
 
-        /****************************************************************/
-        case FALLING_EDGE_DETECTED:
+         case FALLING_EDGE_DETECTED:
             gpioWrite( LED1, 1 );
             gpioWrite( LED2, 1 );
             gpioWrite( LED3, 0 );
 
+            GetResource(TickCount);
             tickMarkDown = tickCount;
+            ReleaseResource(TickCount);
+
             ticksUp = tickMarkDown - tickMarkUp;
 
             state = WAITING_RISING_EDGE;
 
-        break;
+         break;
 
-        /****************************************************************/
-        case WAITING_RISING_EDGE:
+         case WAITING_RISING_EDGE:
             gpioWrite( LED1, 0 );
             gpioWrite( LED2, 0 );
             gpioWrite( LED3, 1 );
 
             if (! belowThreshold) {
-                state = DEBOUNCING_RISING_EDGE;
-                low = 0;
-                high = 1;
+               state = DEBOUNCING_RISING_EDGE;
+               low = 0;
+               high = 1;
             }
 
-        break;
+         break;
 
-        /****************************************************************/
-        case DEBOUNCING_RISING_EDGE:
+         case DEBOUNCING_RISING_EDGE:
             gpioWrite( LED1, 1 );
             gpioWrite( LED2, 0 );
             gpioWrite( LED3, 1 );
 
             if (!belowThreshold) {
-                ++high;
-                if ( high >= DEBOUNCE_HITS) {
-                    state = RISING_EDGE_DETECTED;
-                }
+               ++high;
+               if ( high >= DEBOUNCE_HITS) {
+                  state = RISING_EDGE_DETECTED;
+               }
             } else {
-                high = 0;
+               high = 0;
             }
 
-        break;
+         break;
 
-        /****************************************************************/
-        case RISING_EDGE_DETECTED:
+         case RISING_EDGE_DETECTED:
             gpioWrite( LED1, 0 );
             gpioWrite( LED2, 1 );
             gpioWrite( LED3, 1 );
 
+            GetResource(TickCount);
             tickMarkUp = tickCount;
+            ReleaseResource(TickCount);
+
             ticksDown = tickMarkUp - tickMarkDown;
 
             char uartBuffer[] = "0000000000";
-
-
             itoa(ticksDown + ticksUp, uartBuffer, 10);
             uartWriteString( UART_USB, uartBuffer);
             uartWriteString( UART_USB, "\n");
 
-            gpioWrite( LED1, 1 );
+            state = WAITING_FALLING_EDGE;
 
-            state = WAIING_FALLING_EDGE;
+         break;
 
-        break;
+      }
+   }
 
-  }
-
-
-
-   //ReleaseResource(AnalogValue);
-   adcClearInterrupt(CH1);
+   TerminateTask();
 }
 
 /**

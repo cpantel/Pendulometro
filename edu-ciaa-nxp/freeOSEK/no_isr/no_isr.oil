@@ -1,6 +1,6 @@
 OSEK OSEK {
 
-   OS	Pendulo {
+   OS Timer {
       STATUS = EXTENDED;
       ERRORHOOK = TRUE;
       PRETASKHOOK = FALSE;
@@ -13,51 +13,28 @@ OSEK OSEK {
 
    APPMODE = AppMode1;
 
-   RESOURCE=TickCount;
+   RESOURCE = TickCount;
 
-   TASK adcStartAsyncWrapperTask {
+   TASK tickIncrementTask {
       PRIORITY = 2;
       ACTIVATION = 1;
       STACK = 512;
       TYPE = EXTENDED;
       SCHEDULE = NON;
-      AUTOSTART = TRUE {
-      	APPMODE = AppMode1;
-      }
+      RESOURCE = TickCount;
    }
 
-   TASK tickIncrementTask {
+   TASK FSMTask {
       PRIORITY = 1;
       ACTIVATION = 1;
       STACK = 512;
       TYPE = EXTENDED;
-      SCHEDULE = NON;
+      SCHEDULE = FULL;
       RESOURCE = TickCount;
       AUTOSTART = TRUE {
-        APPMODE = AppMode1;
-      
-      }
+         APPMODE = AppMode1;
+      };
    }
-
-   ISR adcReadAsyncWrapperISR {
-      INTERRUPT = ADC0;
-      PRIORITY = 0;
-      CATEGORY = 2;
-      RESOURCE = TickCount;
-   }
-   
-   ALARM ActivateAdcStartAsyncWrapperTask{
-      COUNTER = HardwareCounter;
-      ACTION = ACTIVATETASK {
-         TASK = adcStartAsyncWrapperTask;
-      }
-      AUTOSTART = TRUE {
-      	APPMODE = AppMode1;
-      	ALARMTIME = 999;
-      	CYCLETIME = 10;
-      }
-   }
-
 
    ALARM ActivateTickIncrementerTask{
       COUNTER = HardwareCounter;
@@ -66,7 +43,7 @@ OSEK OSEK {
       }
       AUTOSTART = TRUE {
         APPMODE = AppMode1;
-        ALARMTIME = 999;
+        ALARMTIME = 500;
         CYCLETIME = 1;
       }
    }
