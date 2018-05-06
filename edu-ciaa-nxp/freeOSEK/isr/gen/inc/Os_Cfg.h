@@ -80,7 +80,7 @@
 #define OSEK_OS_INTERRUPT_MASK ((InterruptFlagsType)0xFFFFFFFFU)
 
 /** \brief Task Definition */
-#define adcStartAsyncWrapperTask 0
+#define adcStartNonBlockingWrapperTask 0
 /** \brief Task Definition */
 #define tickIncrementTask 1
 /** \brief Task Definition */
@@ -95,8 +95,8 @@
 /** \brief Definition of the resource TickCount */
 #define TickCount ((ResourceType)0)
 
-/** \brief Definition of the Alarm ActivateAdcStartAsyncWrapperTask */
-#define ActivateAdcStartAsyncWrapperTask 0
+/** \brief Definition of the Alarm ActivateAdcStartNonBlockingWrapperTask */
+#define ActivateAdcStartNonBlockingWrapperTask 0
 /** \brief Definition of the Alarm ActivateTickIncrementerTask */
 #define ActivateTickIncrementerTask 1
 
@@ -187,15 +187,15 @@ extern unsigned int Osek_ErrorRet;
 /** \brief Error Hook */
 extern void ErrorHook(void);
 
-/** \brief Task Declaration of Task adcStartAsyncWrapperTask */
-DeclareTask(adcStartAsyncWrapperTask);
+/** \brief Task Declaration of Task adcStartNonBlockingWrapperTask */
+DeclareTask(adcStartNonBlockingWrapperTask);
 /** \brief Task Declaration of Task tickIncrementTask */
 DeclareTask(tickIncrementTask);
 /** \brief Task Declaration of Task FSMTask */
 DeclareTask(FSMTask);
 
 /** \brief ISR Declaration */
-extern void OSEK_ISR_adcReadAsyncWrapperISR(void); /* Interrupt Handler adcReadAsyncWrapperISR */
+extern void OSEK_ISR_adcReadNonBlockingWrapperISR(void); /* Interrupt Handler adcReadNonBlockingWrapperISR */
 
 
 /** \brief Schedule this Task if higher priority Task are Active

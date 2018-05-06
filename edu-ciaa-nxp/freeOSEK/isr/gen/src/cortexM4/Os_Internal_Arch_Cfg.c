@@ -170,7 +170,7 @@ void (* const g_pfnVectors[])(void) = {
    OSEK_ISR_NoHandler, /* 0x1e 0x00000078 - No Handler set for ISR TIMER2 (IRQ 14) */
    OSEK_ISR_NoHandler, /* 0x1f 0x0000007C - No Handler set for ISR TIMER3 (IRQ 15) */
    OSEK_ISR_NoHandler, /* 0x20 0x00000080 - No Handler set for ISR MCPWM (IRQ 16) */
-   OSEK_ISR2_adcReadAsyncWrapperISR, /* 0x21 0x00000084 ISR for ADC0 (IRQ 17) Category 2 */
+   OSEK_ISR2_adcReadNonBlockingWrapperISR, /* 0x21 0x00000084 ISR for ADC0 (IRQ 17) Category 2 */
    OSEK_ISR_NoHandler, /* 0x22 0x00000088 - No Handler set for ISR I2C0 (IRQ 18) */
    OSEK_ISR_NoHandler, /* 0x23 0x0000008C - No Handler set for ISR I2C1 (IRQ 19) */
    OSEK_ISR_NoHandler, /* 0x24 0x00000090 - No Handler set for ISR SPI (IRQ 20) */

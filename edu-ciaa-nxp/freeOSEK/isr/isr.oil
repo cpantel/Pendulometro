@@ -17,7 +17,7 @@ OSEK OSEK {
 
    EVENT = ADCRead;
 
-   TASK adcStartAsyncWrapperTask {
+   TASK adcStartNonBlockingWrapperTask {
       PRIORITY = 2;
       ACTIVATION = 1;
       STACK = 512;
@@ -47,17 +47,17 @@ OSEK OSEK {
       }
    }
 
-   ISR adcReadAsyncWrapperISR {
+   ISR adcReadNonBlockingWrapperISR {
       INTERRUPT = ADC0;
       PRIORITY = 0;
       CATEGORY = 2;
       EVENT = ADCRead;
    }
    
-   ALARM ActivateAdcStartAsyncWrapperTask{
+   ALARM ActivateAdcStartNonBlockingWrapperTask{
       COUNTER = HardwareCounter;
       ACTION = ACTIVATETASK {
-         TASK = adcStartAsyncWrapperTask;
+         TASK = adcStartNonBlockingWrapperTask;
       }
       AUTOSTART = TRUE {
       	APPMODE = AppMode1;

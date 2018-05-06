@@ -374,9 +374,9 @@ extern CounterVarType CountersVar[1];
 /** \brief Counter Const Structure */
 extern const CounterConstType CountersConst[1];
 /*==================[external functions declaration]=========================*/
-/** \brief Interrupt Cat 2 adcReadAsyncWrapperISR
+/** \brief Interrupt Cat 2 adcReadNonBlockingWrapperISR
  **/
-extern void OSEK_ISR2_adcReadAsyncWrapperISR(void);
+extern void OSEK_ISR2_adcReadNonBlockingWrapperISR(void);
 
 /** @} doxygen end group definition */
 /** @} doxygen end group definition */

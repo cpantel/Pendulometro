@@ -33,7 +33,7 @@ int main( void )
 
    uartConfig( UART_USB, 115200 );
 
-   uartWriteString( UART_USB, "\nTimer ISR v1\n");
+   uartWriteString( UART_USB, "\nTimer ISR v2\n");
 
    StartOS(AppMode1);
 
@@ -56,33 +56,35 @@ void ErrorHook(void)
 
 TASK(tickIncrementTask)
 {
-   GetResource(TickCount);
+
+   static uint64_t myTick = 0;
+//   GetResource(TickCount);
    ++tickCount;
-   if (tickCount % 100 == 0 ) gpioToggle( LED1);
 
-//   uartWriteString( UART_USB, ".");
-   ReleaseResource(TickCount);
+   if (++myTick % 100 == 0 ) gpioToggle( LED3);
+
+//   // uartWriteString( UART_USB, ".");
+  // ReleaseResource(TickCount);
 
    TerminateTask();
 }
 
-TASK(adcStartAsyncWrapperTask)
+TASK(adcStartNonBlockingWrapperTask)
 {
-   adcStartAsync(CH1);
-   if (tickCount % 25 == 0 ) gpioToggle( LED2);
+   static uint64_t myTick = 0;
+//   adcStartNonBlocking(CH1);
+   if (++myTick % 10 == 0 ) gpioToggle( LED2);
    TerminateTask();
 }
 
 
 
-ISR (adcReadAsyncWrapperISR)
+ISR (adcReadNonBlockingWrapperISR)
 {
-  //   uartWriteString( UART_USB, "<");
+   static uint64_t myTick = 0;
    SetEvent(FSMTask, ADCRead);
-   if (tickCount % 25 == 0 ) gpioToggle( LED3);
+   if (++myTick % 100000 == 0 ) gpioToggle( LED1);
 
-
-  //   uartWriteString( UART_USB, ">");
 }
 
 TASK (FSMTask) {
@@ -97,18 +99,21 @@ TASK (FSMTask) {
 
    static FSMtimer_t state = WAITING_FALLING_EDGE;
 
-   uartWriteString( UART_USB, "pre while\n");
+   static uint64_t myTick = 0;
 
+   // uartWriteString( UART_USB, "pre while\n");
+//   adcStartNonBlocking(CH1);
    while (1) {
-      gpioToggle( LED3 );
-      uartWriteString( UART_USB, "pre waitevent\n");
+      uartWriteString( UART_USB, "waitevent\n");
+      if (++myTick % 10 == 0 ) gpioToggle( LEDR);
       WaitEvent(ADCRead);
-      uartWriteString( UART_USB, "post waitevent\n");
 
-      uint16_t sample = adcReadAsync( CH1 , !ADC_CLEAR_INT );
+      // uartWriteString( UART_USB, "post waitevent\n");
+
+      uint16_t sample = adcReadNonBlocking( CH1 , !ADC_CLEAR_INT );
       unsigned int belowThreshold = sample  < SIGNAL_LEVEL;
 
-      uartWriteString( UART_USB, "switch\n");
+      // uartWriteString( UART_USB, "switch\n");
       switch(state) {
          case WAITING_FALLING_EDGE:
 //            gpioWrite( LED1, 1 );
@@ -195,8 +200,8 @@ TASK (FSMTask) {
 
             char uartBuffer[] = "0000000000";
             itoa(ticksDown + ticksUp, uartBuffer, 10);
-            uartWriteString( UART_USB, uartBuffer);
-            uartWriteString( UART_USB, "\n");
+            // uartWriteString( UART_USB, uartBuffer);
+            // uartWriteString( UART_USB, "\n");
 
             //gpioWrite( LED1, 1 );
 
@@ -204,13 +209,13 @@ TASK (FSMTask) {
 
          break;
       }
-      uartWriteString( UART_USB, "clear event\n");
+      // uartWriteString( UART_USB, "clear event\n");
 
       ClearEvent(ADCRead);
-      uartWriteString( UART_USB, "clear interrupt\n");
+      // uartWriteString( UART_USB, "clear interrupt\n");
 
-      adcClearInterrupt(CH1);
-      uartWriteString( UART_USB, "end loop\n");
+//      adcClearInterrupt(CH1);
+       uartWriteString( UART_USB, "end loop\n");
 
    }
    TerminateTask();

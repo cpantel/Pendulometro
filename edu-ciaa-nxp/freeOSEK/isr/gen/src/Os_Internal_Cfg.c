@@ -77,11 +77,11 @@
 /*==================[internal functions declaration]=========================*/
 
 /*==================[internal data definition]===============================*/
-/** \brief adcStartAsyncWrapperTask stack */
+/** \brief adcStartNonBlockingWrapperTask stack */
 #if ( x86 == ARCH )
-uint8 StackTaskadcStartAsyncWrapperTask[512 + TASK_STACK_ADDITIONAL_SIZE];
+uint8 StackTaskadcStartNonBlockingWrapperTask[512 + TASK_STACK_ADDITIONAL_SIZE];
 #else
-uint8 StackTaskadcStartAsyncWrapperTask[512];
+uint8 StackTaskadcStartNonBlockingWrapperTask[512];
 #endif
 /** \brief tickIncrementTask stack */
 #if ( x86 == ARCH )
@@ -96,8 +96,8 @@ uint8 StackTaskFSMTask[512 + TASK_STACK_ADDITIONAL_SIZE];
 uint8 StackTaskFSMTask[512];
 #endif
 
-/** \brief adcStartAsyncWrapperTask context */
-TaskContextType ContextTaskadcStartAsyncWrapperTask;
+/** \brief adcStartNonBlockingWrapperTask context */
+TaskContextType ContextTaskadcStartNonBlockingWrapperTask;
 /** \brief tickIncrementTask context */
 TaskContextType ContextTasktickIncrementTask;
 /** \brief FSMTask context */
@@ -110,7 +110,7 @@ TaskType ReadyList1[1];
 TaskType ReadyList0[2];
 
 const AlarmType OSEK_ALARMLIST_HardwareCounter[2] = {
-   ActivateAdcStartAsyncWrapperTask, /* this alarm has to be incremented with this counter */
+   ActivateAdcStartNonBlockingWrapperTask, /* this alarm has to be incremented with this counter */
    ActivateTickIncrementerTask, /* this alarm has to be incremented with this counter */
 };
 
@@ -127,12 +127,12 @@ const AlarmType OSEK_ALARMLIST_HardwareCounter[2] = {
  */
 
 const TaskConstType TasksConst[TASKS_COUNT] = {
-   /* Task adcStartAsyncWrapperTask */
+   /* Task adcStartNonBlockingWrapperTask */
    {
-       OSEK_TASK_adcStartAsyncWrapperTask,   /* task entry point */
-       &ContextTaskadcStartAsyncWrapperTask, /* pointer to task context */
-       StackTaskadcStartAsyncWrapperTask, /* pointer stack memory */
-       sizeof(StackTaskadcStartAsyncWrapperTask), /* stack size */
+       OSEK_TASK_adcStartNonBlockingWrapperTask,   /* task entry point */
+       &ContextTaskadcStartNonBlockingWrapperTask, /* pointer to task context */
+       StackTaskadcStartNonBlockingWrapperTask, /* pointer stack memory */
+       sizeof(StackTaskadcStartNonBlockingWrapperTask), /* stack size */
        1, /* task priority */
        1, /* task max activations */
        {
@@ -228,7 +228,7 @@ const AlarmConstType AlarmsConst[2]  = {
       ACTIVATETASK, /* Alarm action */
       {
          NULL, /* no callback */
-         adcStartAsyncWrapperTask, /* TaskID */
+         adcStartNonBlockingWrapperTask, /* TaskID */
          0, /* no event */
          0 /* no counter */
       },
@@ -248,7 +248,7 @@ const AlarmConstType AlarmsConst[2]  = {
 const AutoStartAlarmType AutoStartAlarm[ALARM_AUTOSTART_COUNT] = {
   {
       AppMode1, /* Application Mode */
-      ActivateAdcStartAsyncWrapperTask, /* Alarms */
+      ActivateAdcStartNonBlockingWrapperTask, /* Alarms */
       1000, /* Alarm Time */
       5 /* Alarm Time */
    },
@@ -284,7 +284,7 @@ uint8 ErrorHookRunning;
 /*==================[internal functions definition]==========================*/
 
 /*==================[external functions definition]==========================*/
-void OSEK_ISR2_adcReadAsyncWrapperISR(void)
+void OSEK_ISR2_adcReadNonBlockingWrapperISR(void)
 {
    /* store the calling context in a variable */
    ContextType actualContext = GetCallingContext();
@@ -292,7 +292,7 @@ void OSEK_ISR2_adcReadAsyncWrapperISR(void)
    SetActualContext(CONTEXT_ISR2);
 
    /* trigger isr 2 */
-   OSEK_ISR_adcReadAsyncWrapperISR();
+   OSEK_ISR_adcReadNonBlockingWrapperISR();
 
    /* reset context */
    SetActualContext(actualContext);
